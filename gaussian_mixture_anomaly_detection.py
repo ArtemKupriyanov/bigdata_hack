@@ -39,6 +39,7 @@ class GaussianMixtureInTimeAnomalyDetector:
                     tol=1e-6,
                     covariance_type='diag',
                     init_params='kmeans',
+                    max_iter=100,
                     random_state=None,
                 ):
         '''
@@ -52,6 +53,7 @@ class GaussianMixtureInTimeAnomalyDetector:
         self.covariance_type = covariance_type
         self.init_params = init_params
         self.random_state = random_state
+        self.max_iter = max_iter
 
         self.eps = 1e-12  # feature-normalization constant
 
@@ -85,6 +87,7 @@ class GaussianMixtureInTimeAnomalyDetector:
             covariance_type=self.covariance_type,
             init_params=self.init_params,
             random_state=self.random_state,
+            max_iter=self.max_iter,
                             )
 
         gm.fit(X)
@@ -126,7 +129,7 @@ class GaussianMixtureInTimeAnomalyDetector:
                 norma = np.sum(probs)
 
                 for cluster in np.arange(self.n_components):
-                    self.__p_cluster_sample[cluster][time][series] = probs[cluster] / norma
+                    self.__p_cluster_sample[cluster][time][series] = probs[cluster] / (norma + 1e-9)
 
         # memorization all P(cluster|time)
         self.__p_cluster_time = np.zeros((self.n_components, self.T))
@@ -175,7 +178,7 @@ class GaussianMixtureInTimeAnomalyDetector:
             t must be in [0, 1, ... N)
         '''
 
-        return np.log(1e-500 + np.sum([self.__p_sample_cluster(x, cluster) * self.__p_cluster_time[cluster][t] \
+        return np.log(1e-200 + np.sum([self.__p_sample_cluster(x, cluster) * self.__p_cluster_time[cluster][t] \
                          for cluster in np.arange(self.n_components)]))
 
 
